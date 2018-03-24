@@ -49,18 +49,39 @@ linked_list_t *calc_stack_flush(calc_stack_t *stack) {
 	return begin;
 }
 
-int parse(char *input, calc_stack_t **ret_stack) {
-	char *token;
+int tokenize(char *input, char ***tokens) {
+	char *_tokens[1000];
+	uint32_t num_tokens = 0;
 
+	char *token = strtok(input, " ");
+	_tokens[0] = token;
+	token = strtok(NULL, " ");
+	for (num_tokens = 1; token; ++num_tokens) {
+		_tokens[num_tokens] = token;
+		token = strtok(NULL, " ");
+	}
+
+	*tokens = malloc(sizeof(char*) * num_tokens);
+	memcpy(*tokens, _tokens, sizeof(char*) * num_tokens);
+
+	return num_tokens;
+}
+
+int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 	calc_stack_t *stack = calc_stack_new();
 	*ret_stack = stack;
 	calc_stack_t *value_stack = calc_stack_new();
-	uint32_t token_num = 0;
 
 	char *tokenizer_string = malloc(sizeof(char) * strlen(input));
 	strcpy(tokenizer_string, input);
-	token = strtok(tokenizer_string, " ");
-	while (token) {
+
+	char **tokens;
+	uint32_t num_tokens = tokenize(input, &tokens);
+
+	char *token = NULL;
+	uint32_t token_num = 0;
+	for (; token_num < num_tokens; ++token_num) {
+		token = tokens[token_num];
 		double a;
 		if (sscanf(token, "%lf", &a)) {
 			calc_stack_push(stack, a);
@@ -154,59 +175,50 @@ int parse(char *input, calc_stack_t **ret_stack) {
 		else {
 			fprintf(stderr, "Error: Invalid token\n");
 		}
-
-		token = strtok(NULL, " ");
-		++token_num;
 	}
 	
+	free(tokens);
 	free(tokenizer_string);
 	free(value_stack);
 	return 0;
 
 	stack_err: {
 		fprintf(stderr, "Stack empty on token %d (%s)\n", token_num, token);
-		fprintf(stderr, "%s\n", input);
 
-		uint32_t linewidth = token - tokenizer_string;
+		for (uint32_t i = 0; i < num_tokens; ++i) {
+			fprintf(stderr, "%s ", tokens[i]);
+		}
+		fprintf(stderr, "\n");
 
-		for (uint32_t i = 0; i < linewidth + 1; ++i) {
-			if (i == linewidth)
+		for (uint32_t i = 0; i < token_num + 2; ++i) {
+			if (i == token_num + 1)
 				fprintf(stderr, "^");
 			else
 				fprintf(stderr, " ");
 		}
 		fprintf(stderr, "\n");
-		for (uint32_t i = 0; i < linewidth + 1; ++i) {
-			if (i == linewidth)
+		for (uint32_t i = 0; i < token_num + 2; ++i) {
+			if (i == token_num + 1)
 				fprintf(stderr, "|");
 			else
 				fprintf(stderr, " ");
 		}
 		fprintf(stderr, "\n");
-		for (uint32_t i = 0; i < linewidth + 1; ++i) {
+		for (uint32_t i = 0; i < token_num + 2; ++i) {
 			fprintf(stderr, "-");
 		}
 		fprintf(stderr, "\n");
+
+		free(tokens);
+		free(tokenizer_string);
+		free(value_stack);
 		return -1;
 	}
 }
 
 int main(int argc, char *argv[]) {
 	char *input;
-
-	// if (argc == 1) {
-	// 	char str[1000];
-	// 	size_t bytes_read = fread(str, sizeof(char), 1000, stdin);
-	// 	// trim newline
-	// 	if (str[bytes_read - 1] == '\n')
-	// 		str[bytes_read - 1] = '\0';
-	// 	input = str;
-	// } else if (strcmp(argv[1], "-e") == 0 && argc == 3) {
-	// 	input = argv[2];
-	// } else {
-	// 	fprintf(stderr, "Usage: calc -e [input]\n");
-	// 	return -1;
-	// }
+	bool infix = false;
 
 	if (argc == 1)
 		return 1;
@@ -216,6 +228,9 @@ int main(int argc, char *argv[]) {
 		switch (c) {
 			case 'e':
 				input = optarg;
+				break;
+			case 'i':
+				infix = true;
 				break;
 			case '?':
 				if (optopt == 'e')
@@ -233,7 +248,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	calc_stack_t *stack = NULL;
-	if (!parse(input, &stack)) {
+	if (!parse(input, &stack, infix)) {
 		linked_list_t *stack_values = calc_stack_flush(stack);
 		linked_list_t *begin = stack_values;
 		
