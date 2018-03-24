@@ -7,16 +7,16 @@ linked_list_t *ll_new() {
     return ll;
 }
 
-linked_list_t *ll_set(linked_list_t *ll, double val) {
+linked_list_t *ll_set(linked_list_t *ll, void *val) {
     ll->node = val;
     return ll;
 }
 
-double ll_get(const linked_list_t *ll) {
+void *ll_get(const linked_list_t *ll) {
     return ll->node;
 }
 
-double ll_get_and_next(linked_list_t **ll) {
+void *ll_get_and_next(linked_list_t **ll) {
     linked_list_t *old = *ll;
     *ll = (*ll)->next;
     return old->node;
@@ -26,7 +26,7 @@ linked_list_t *ll_next(const linked_list_t *ll) {
     return ll->next;
 }
 
-linked_list_t **ll_push(linked_list_t **ll, double val) {
+linked_list_t **ll_push(linked_list_t **ll, void *val) {
     (*ll)->node = val;
     (*ll)->next = ll_new();
     *ll = (*ll)->next;

@@ -8,46 +8,7 @@
 #include <unistd.h>
 
 #include "linked_list.h"
-
-#define STACK_SIZE 1000
-
-typedef struct calc_stack {
-	size_t count;
-	double stack[STACK_SIZE];
-} calc_stack_t;
-
-calc_stack_t *calc_stack_new() {
-	calc_stack_t *stack = malloc(sizeof(calc_stack_t));
-	stack->count = 0;
-	return stack;
-}
-
-bool calc_stack_empty(const calc_stack_t *stack) {
-	return stack->count == 0;
-}
-
-double calc_stack_pop(calc_stack_t *stack) {
-	return stack->stack[--stack->count];
-}
-
-void calc_stack_push(calc_stack_t *stack, double val) {
-	stack->stack[stack->count] = val;
-	stack->count++;
-}
-
-linked_list_t *calc_stack_flush(calc_stack_t *stack) {
-	if (stack->count == 0) {
-		return NULL;
-	}
-
-	linked_list_t *ll = ll_new();
-	linked_list_t *begin = ll;
-	for (size_t i = 0; stack->count > 0; ++i) {
-		ll_push(&ll, calc_stack_pop(stack));
-	}
-
-	return begin;
-}
+#include "stack.h"
 
 int tokenize(char *input, char ***tokens) {
 	char *_tokens[1000];
@@ -82,77 +43,93 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 	uint32_t token_num = 0;
 	for (; token_num < num_tokens; ++token_num) {
 		token = tokens[token_num];
-		double a;
-		if (sscanf(token, "%lf", &a)) {
-			calc_stack_push(stack, a);
+		double *val = malloc(sizeof(double));
+		if (sscanf(token, "%lf", val)) {
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "+") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			calc_stack_push(stack, calc_stack_pop(stack) + calc_stack_pop(stack));
+			*val = *(double *)calc_stack_pop(stack) + *(double *)calc_stack_pop(stack);
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "-") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			double val = calc_stack_pop(stack);
-			calc_stack_push(stack, calc_stack_pop(stack) - val);
+			double val1 = *(double *)calc_stack_pop(stack);
+			double val2 = *(double *)calc_stack_pop(stack);
+			*val = val2 - val1;
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "*") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			calc_stack_push(stack, calc_stack_pop(stack) * calc_stack_pop(stack));
+			*val = *(double *)calc_stack_pop(stack) * *(double *)calc_stack_pop(stack);
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "/") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			double val = calc_stack_pop(stack);
-			calc_stack_push(stack, calc_stack_pop(stack) / val);
+			double val1 = *(double *)calc_stack_pop(stack);
+			double val2 = *(double *)calc_stack_pop(stack);
+			*val = val2 / val1;
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "sqrt") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, sqrt(calc_stack_pop(stack)));
+			*val = sqrt(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "sin") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, sin(calc_stack_pop(stack)));
+			*val = sin(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "cos") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, cos(calc_stack_pop(stack)));
+			*val = cos(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "tan") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, tan(calc_stack_pop(stack)));
+			*val = tan(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "exp") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, exp(calc_stack_pop(stack)));
+			*val = exp(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "log") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, log(calc_stack_pop(stack)));
+			*val = log(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "log10") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, log10(calc_stack_pop(stack)));
+			*val = log10(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "abs") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			calc_stack_push(stack, fabs(calc_stack_pop(stack)));
+			*val = fabs(*(double *)calc_stack_pop(stack));
+			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "pow") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			double val = calc_stack_pop(stack);
-			calc_stack_push(stack, pow(calc_stack_pop(stack), val));
+			double val1 = *(double *)calc_stack_pop(stack);
+			double val2 = *(double *)calc_stack_pop(stack);
+			*val = pow(val2, val1);
+			calc_stack_push(stack, val);
 		}
 		/* stack functions */
 		else if (strcmp(token, "push") == 0) {
@@ -167,10 +144,12 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 		}
 		/* constants */
 		else if (strcmp(token, "pi") == 0) {
-			calc_stack_push(stack, 4 * atan(1));
+			*val = 4 * atan(1);
+			calc_stack_push(stack, &val);
 		}
 		else if (strcmp(token, "e") == 0) {
-			calc_stack_push(stack, exp(1));
+			*val = exp(1);
+			calc_stack_push(stack, &val);
 		}
 		else {
 			fprintf(stderr, "Error: Invalid token\n");
@@ -254,7 +233,7 @@ int main(int argc, char *argv[]) {
 		
 		printf("Stack:\n");
 		while (!ll_end(stack_values)) {
-			printf("%lf\n", ll_get_and_next(&stack_values));
+			printf("%lf\n", *(double*)ll_get_and_next(&stack_values));
 		}
 
 		free(stack);
