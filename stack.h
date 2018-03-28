@@ -15,11 +15,9 @@ typedef struct calc_stack {
 calc_stack_t *calc_stack_new();
 
 bool calc_stack_empty(const calc_stack_t *stack);
-
 void *calc_stack_pop(calc_stack_t *stack);
-
+void *calc_stack_top(calc_stack_t *stack);
 void calc_stack_push(calc_stack_t *stack, void *val);
-
 linked_list_t *calc_stack_flush(calc_stack_t *stack);
 
 

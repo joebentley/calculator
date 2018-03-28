@@ -30,7 +30,7 @@ int tokenize(char *input, char ***tokens) {
 
 bool is_number(const char *str) {
 	double a;
-	return scanf(str, "%lf", &a) != 0
+	return sscanf(str, "%lf", &a) != 0
 		|| !strcmp(str, "pi")
 		|| !strcmp(str, "e");
 }
@@ -39,54 +39,103 @@ typedef struct op_result {
 	uint32_t precedence;
 	bool left_associative;
 	bool exists;
+	char *token;
 } op_result_t;
 
-op_result_t parse_operator(const char *str) {
+op_result_t parse_operator(char *str) {
 	op_result_t op_result;
 	op_result.left_associative = true;
 	op_result.exists = true;
 
 	if (!strcmp(str, "+")) {
 		op_result.precedence = 4;
-		return op_result;
 	} else if (!strcmp(str, "-")) {
 		op_result.precedence = 4;
-		return op_result;
 	} else if (!strcmp(str, "*")) {
 		op_result.precedence = 5;
-		return op_result;
 	} else if (!strcmp(str, "/")) {
 		op_result.precedence = 5;
-		return op_result;
 	} else if (!strcmp(str, "sin") || !strcmp(str, "cos") || !strcmp(str, "tan")
 			|| !strcmp(str, "exp") || !strcmp(str, "exp") || !strcmp(str, "tan")
 			|| !strcmp(str, "log") || !strcmp(str, "log10") || !strcmp(str, "abs")
 			|| !strcmp(str, "pow") || !strcmp(str, "push") || !strcmp(str, "pop")) {
 		op_result.precedence = 5;
 		op_result.left_associative = false;
-	} else {
+	} else if (strcmp(str, "(") != 0 && strcmp(str, ")") != 0) {
 		op_result.exists = false;
 	}
+	op_result.token = str;
 	return op_result;
 }
 
-// void infix_to_rpn(char **tokens, uint32_t n) {
-// 	// char **rpn_tokens = malloc(sizeof(char *) * n);
-// 	uint32_t curr_rpn_token = 0;
+// Shunting-yard algorithm
+uint32_t infix_to_rpn(char **tokens, uint32_t n) {
+	// char **rpn_tokens = malloc(sizeof(char *) * n);
+	uint32_t curr_rpn_token = 0;
 
-// 	calc_stack_t *operator_stack = calc_stack_new();
+	calc_stack_t *op_stack = calc_stack_new();
+	// printf("%d\n",is_number(token));
 
-// 	for (uint32_t i = 0; i < n; ++i) {
-// 		char *token = tokens[i];
-// 		op_result_t result = parse_operator(token);
+	for (uint32_t i = 0; i < n; ++i) {
+		char *token = malloc(sizeof(char) * strlen(tokens[i]));
+		strcpy(token, tokens[i]);
+		op_result_t *result = malloc(sizeof(op_result_t));
+		*result = parse_operator(token);
 
-// 		if (is_number(token)) {
-// 			tokens[curr_rpn_token++] = token;
-// 		} else if (result.exists) {
-// 			while (operator_stack)
-// 		}
-// 	}
-// }
+		if (is_number(token)) {
+			tokens[curr_rpn_token++] = token;
+		} else if (!strcmp(result->token, "(")) {
+			calc_stack_push(op_stack, result);
+		} else if (!strcmp(result->token, ")")) {
+			if (!calc_stack_empty(op_stack)) {
+				op_result_t stack_top = *(op_result_t*)calc_stack_top(op_stack);
+				while (strcmp(stack_top.token, "(") != 0) {
+					tokens[curr_rpn_token++] = stack_top.token;
+					calc_stack_pop(op_stack);
+					
+					if (calc_stack_empty(op_stack)) {
+						fprintf(stderr, "Error: Mismatched parentheses\n");
+						exit(-1);
+					}
+
+					stack_top = *(op_result_t*)calc_stack_top(op_stack);					
+				}
+				calc_stack_pop(op_stack);
+			}
+		} else if (result->exists) {
+			if (!calc_stack_empty(op_stack)) {
+				op_result_t stack_top = *(op_result_t*)calc_stack_top(op_stack);
+				while ((stack_top.precedence > result->precedence
+					|| (stack_top.precedence == result->precedence && stack_top.left_associative))
+					&&  strcmp(stack_top.token, "(") != 0)
+				{
+					tokens[curr_rpn_token++] = stack_top.token;
+
+					if (!calc_stack_empty(op_stack)) {
+						calc_stack_pop(op_stack);
+						stack_top = *(op_result_t*)calc_stack_top(op_stack);
+					} else
+						break;
+				}
+			}
+			calc_stack_push(op_stack, result);
+		}
+	}
+	while (!calc_stack_empty(op_stack)) {
+		op_result_t next_token = *(op_result_t*)calc_stack_pop(op_stack);
+		if (!strcmp(next_token.token, "(") || !strcmp(next_token.token, ")")) {
+			fprintf(stderr, "Error: Mismatched parentheses\n");
+			exit(-1);
+		}
+		tokens[curr_rpn_token++] = next_token.token;
+	}
+
+	for (uint32_t i = 0; i < curr_rpn_token; ++i) {
+		printf("%s\n", tokens[i]);
+	}
+
+	return curr_rpn_token;
+}
 
 int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 	calc_stack_t *stack = calc_stack_new();
@@ -98,6 +147,10 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 
 	char **tokens;
 	uint32_t num_tokens = tokenize(input, &tokens);
+
+	if (infix) {
+		num_tokens = infix_to_rpn(tokens, num_tokens);
+	}
 
 	char *token = NULL;
 	uint32_t token_num = 0;
@@ -263,7 +316,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 
 	int c;
-	while ((c = getopt(argc, argv, "e:")) != -1) {
+	while ((c = getopt(argc, argv, "ie:")) != -1) {
 		switch (c) {
 			case 'e':
 				input = optarg;

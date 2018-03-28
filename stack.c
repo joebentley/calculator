@@ -14,6 +14,10 @@ void *calc_stack_pop(calc_stack_t *stack) {
 	return stack->stack[--stack->count];
 }
 
+void *calc_stack_top(calc_stack_t *stack) {
+	return stack->stack[stack->count - 1];
+}
+
 void calc_stack_push(calc_stack_t *stack, void *val) {
 	stack->stack[stack->count] = val;
 	stack->count++;
