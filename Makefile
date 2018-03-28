@@ -1,5 +1,14 @@
 CC=gcc
-CFLAGS=-Wall -Werror -g -lm
+CFLAGS=-Wall -Werror -g
 
-all:
-	$(CC) $(CFLAGS) calc.c linked_list.c stack.c -o calc
+DEPS=linked_list.h stack.h
+OBJ=calc.o linked_list.o stack.o
+
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+calc: $(OBJ)
+	$(CC) -o $@ $^ $(CFLAGS) -lm
+
+clean:
+	rm -rf *.o calc calc.dSYM
