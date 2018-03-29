@@ -55,11 +55,13 @@ op_result_t parse_operator(char *str) {
 		op_result.precedence = 5;
 	} else if (!strcmp(str, "/")) {
 		op_result.precedence = 5;
+	} else if (!strcmp(str, "^")) {
+		op_result.precedence = 6;
 	} else if (!strcmp(str, "sin") || !strcmp(str, "cos") || !strcmp(str, "tan")
 			|| !strcmp(str, "exp") || !strcmp(str, "exp") || !strcmp(str, "tan")
 			|| !strcmp(str, "log") || !strcmp(str, "log10") || !strcmp(str, "abs")
-			|| !strcmp(str, "pow") || !strcmp(str, "push") || !strcmp(str, "pop")) {
-		op_result.precedence = 5;
+			|| !strcmp(str, "push") || !strcmp(str, "pop")) {
+		op_result.precedence = 7;
 		op_result.left_associative = false;
 	} else if (strcmp(str, "(") != 0 && strcmp(str, ")") != 0) {
 		op_result.exists = false;
@@ -239,7 +241,7 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 			*val = fabs(*(double *)calc_stack_pop(stack));
 			calc_stack_push(stack, val);
 		}
-		else if (strcmp(token, "pow") == 0) {
+		else if (strcmp(token, "^") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
 			double val1 = *(double *)calc_stack_pop(stack);

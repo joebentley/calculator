@@ -1,3 +1,4 @@
 
-- exponentiation operator
+- add function support
 - atexit, resource cleanup
+- allow no spaces between tokens
