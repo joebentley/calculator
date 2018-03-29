@@ -1,4 +1,4 @@
 
-- add function support
+- add all expected maths functions
 - atexit, resource cleanup
 - allow no spaces between tokens

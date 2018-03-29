@@ -58,8 +58,8 @@ op_result_t parse_operator(char *str) {
 	} else if (!strcmp(str, "^")) {
 		op_result.precedence = 6;
 	} else if (!strcmp(str, "sin") || !strcmp(str, "cos") || !strcmp(str, "tan")
-			|| !strcmp(str, "exp") || !strcmp(str, "exp") || !strcmp(str, "tan")
-			|| !strcmp(str, "log") || !strcmp(str, "log10") || !strcmp(str, "abs")
+			|| !strcmp(str, "exp") || !strcmp(str, "exp") || !strcmp(str, "log")
+			|| !strcmp(str, "log10") || !strcmp(str, "abs") || !strcmp(str, "atan2")
 			|| !strcmp(str, "push") || !strcmp(str, "pop")) {
 		op_result.precedence = 7;
 		op_result.left_associative = false;
@@ -217,6 +217,14 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 			*val = tan(*(double *)calc_stack_pop(stack));
 			calc_stack_push(stack, val);
 		}
+		else if (strcmp(token, "atan2") == 0) {
+			if (stack->count < 1)
+				goto stack_err;
+			double val1 = *(double *)calc_stack_pop(stack);
+			double val2 = *(double *)calc_stack_pop(stack);
+			*val = atan2(val1, val2);
+			calc_stack_push(stack, val);
+		}
 		else if (strcmp(token, "exp") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
@@ -270,7 +278,7 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 			calc_stack_push(stack, &val);
 		}
 		else {
-			fprintf(stderr, "Error: Invalid token\n");
+			fprintf(stderr, "Error: Invalid token %s\n", token);
 		}
 	}
 	
