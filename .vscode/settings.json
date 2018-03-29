@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "stack.h": "c",
-        "__locale": "c"
+        "__locale": "c",
+        "stack": "c"
     }
 }
