@@ -98,7 +98,7 @@ uint32_t infix_to_rpn(char **tokens, uint32_t n) {
 						exit(-1);
 					}
 
-					stack_top = *(op_result_t*)calc_stack_top(op_stack);					
+					stack_top = *(op_result_t*)calc_stack_top(op_stack);
 				}
 				calc_stack_pop(op_stack);
 			}
@@ -111,11 +111,13 @@ uint32_t infix_to_rpn(char **tokens, uint32_t n) {
 				{
 					tokens[curr_rpn_token++] = stack_top.token;
 
-					if (!calc_stack_empty(op_stack)) {
+					if (op_stack->count > 1) {
 						calc_stack_pop(op_stack);
 						stack_top = *(op_result_t*)calc_stack_top(op_stack);
-					} else
+					} else {
+						calc_stack_pop(op_stack); // pop last element
 						break;
+					}
 				}
 			}
 			calc_stack_push(op_stack, result);
@@ -130,9 +132,9 @@ uint32_t infix_to_rpn(char **tokens, uint32_t n) {
 		tokens[curr_rpn_token++] = next_token.token;
 	}
 
-	for (uint32_t i = 0; i < curr_rpn_token; ++i) {
-		printf("%s\n", tokens[i]);
-	}
+	// for (uint32_t i = 0; i < curr_rpn_token; ++i) {
+	// 	printf("%s\n", tokens[i]);
+	// }
 
 	return curr_rpn_token;
 }
@@ -147,6 +149,7 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 
 	char **tokens;
 	uint32_t num_tokens = tokenize(input, &tokens);
+	uint32_t input_length = num_tokens;
 
 	if (infix) {
 		num_tokens = infix_to_rpn(tokens, num_tokens);
@@ -277,26 +280,26 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 	stack_err: {
 		fprintf(stderr, "Stack empty on token %d (%s)\n", token_num, token);
 
-		for (uint32_t i = 0; i < num_tokens; ++i) {
+		for (uint32_t i = 0; i < input_length; ++i) {
 			fprintf(stderr, "%s ", tokens[i]);
 		}
 		fprintf(stderr, "\n");
 
-		for (uint32_t i = 0; i < token_num + 2; ++i) {
-			if (i == token_num + 1)
+		for (uint32_t i = 0; i < 2 * token_num + 1; ++i) {
+			if (i == 2 * token_num)
 				fprintf(stderr, "^");
 			else
 				fprintf(stderr, " ");
 		}
 		fprintf(stderr, "\n");
-		for (uint32_t i = 0; i < token_num + 2; ++i) {
-			if (i == token_num + 1)
+		for (uint32_t i = 0; i < 2 * token_num + 1; ++i) {
+			if (i == 2 * token_num)
 				fprintf(stderr, "|");
 			else
 				fprintf(stderr, " ");
 		}
 		fprintf(stderr, "\n");
-		for (uint32_t i = 0; i < token_num + 2; ++i) {
+		for (uint32_t i = 0; i < 2 * token_num + 1; ++i) {
 			fprintf(stderr, "-");
 		}
 		fprintf(stderr, "\n");
