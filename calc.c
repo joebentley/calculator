@@ -146,7 +146,7 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 	*ret_stack = stack;
 	calc_stack_t *value_stack = calc_stack_new();
 
-	char *tokenizer_string = malloc(sizeof(char) * strlen(input));
+	char *tokenizer_string = malloc(sizeof(char) * strlen(input) + 1);
 	strcpy(tokenizer_string, input);
 
 	char **tokens;
@@ -165,32 +165,45 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 		if (sscanf(token, "%lf", val)) {
 			calc_stack_push(stack, val);
 		}
+		// TODO: fix repeated code for binary operators
 		else if (strcmp(token, "+") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			*val = *(double *)calc_stack_pop(stack) + *(double *)calc_stack_pop(stack);
+			double *val1 = calc_stack_pop(stack);
+			double *val2 = calc_stack_pop(stack);
+			*val = *val2 + *val1;
+			free(val1);
+			free(val2);
 			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "-") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			double val1 = *(double *)calc_stack_pop(stack);
-			double val2 = *(double *)calc_stack_pop(stack);
-			*val = val2 - val1;
+			double *val1 = calc_stack_pop(stack);
+			double *val2 = calc_stack_pop(stack);
+			*val = *val2 - *val1;
+			free(val1);
+			free(val2);
 			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "*") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			*val = *(double *)calc_stack_pop(stack) * *(double *)calc_stack_pop(stack);
+			double *val1 = calc_stack_pop(stack);
+			double *val2 = calc_stack_pop(stack);
+			*val = *val2 * *val1;
+			free(val1);
+			free(val2);
 			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "/") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			double val1 = *(double *)calc_stack_pop(stack);
-			double val2 = *(double *)calc_stack_pop(stack);
-			*val = val2 / val1;
+			double *val1 = (double*)calc_stack_pop(stack);
+			double *val2 = (double*)calc_stack_pop(stack);
+			*val = *val2 / *val1;
+			free(val1);
+			free(val2);
 			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "sqrt") == 0) {
@@ -220,9 +233,11 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 		else if (strcmp(token, "atan2") == 0) {
 			if (stack->count < 1)
 				goto stack_err;
-			double val1 = *(double *)calc_stack_pop(stack);
-			double val2 = *(double *)calc_stack_pop(stack);
-			*val = atan2(val1, val2);
+			double *val1 = calc_stack_pop(stack);
+			double *val2 = calc_stack_pop(stack);
+			*val = atan2(*val1, *val2);
+			free(val1);
+			free(val2);
 			calc_stack_push(stack, val);
 		}
 		else if (strcmp(token, "exp") == 0) {
@@ -252,9 +267,11 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 		else if (strcmp(token, "^") == 0) {
 			if (stack->count < 2)
 				goto stack_err;
-			double val1 = *(double *)calc_stack_pop(stack);
-			double val2 = *(double *)calc_stack_pop(stack);
-			*val = pow(val2, val1);
+			double *val1 = calc_stack_pop(stack);
+			double *val2 = calc_stack_pop(stack);
+			*val = pow(*val2, *val1);
+			free(val1);
+			free(val2);
 			calc_stack_push(stack, val);
 		}
 		/* stack functions */
@@ -284,7 +301,7 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 	
 	free(tokens);
 	free(tokenizer_string);
-	free(value_stack);
+	calc_stack_destroy(value_stack);
 	return 0;
 
 	stack_err: {
@@ -316,7 +333,7 @@ int parse(char *input, calc_stack_t **ret_stack, bool infix) {
 
 		free(tokens);
 		free(tokenizer_string);
-		free(value_stack);
+		calc_stack_destroy(value_stack);
 		return -1;
 	}
 }
@@ -354,7 +371,7 @@ int main(int argc, char *argv[]) {
 
 	calc_stack_t *stack = NULL;
 	if (!parse(input, &stack, infix)) {
-		linked_list_t *stack_values = calc_stack_flush(stack);
+		linked_list_t *stack_values = calc_stack_to_list(stack);
 		linked_list_t *begin = stack_values;
 		
 		printf("Stack:\n");
@@ -362,10 +379,10 @@ int main(int argc, char *argv[]) {
 			printf("%lf\n", *(double*)ll_get_and_next(&stack_values));
 		}
 
-		free(stack);
+		calc_stack_destroy(stack);
 		ll_destroy(begin);
 		return 0;
 	}
-	free(stack);	
+	calc_stack_destroy(stack);
 	return -1;
 }

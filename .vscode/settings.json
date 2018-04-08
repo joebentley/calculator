@@ -2,6 +2,7 @@
     "files.associations": {
         "stack.h": "c",
         "__locale": "c",
-        "stack": "c"
+        "stack": "c",
+        "chrono": "c"
     }
 }
